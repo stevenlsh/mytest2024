@@ -18,8 +18,11 @@ def create_invoices_from_sales_orders():
     order_ids = models.execute_kw(db, uid, password, 'sale.order', 'search', [[['invoice_status', '=', 'to invoice'], ['state', '=', 'sale']]])
 
     for order_id in order_ids:
-        # Retrieve the date_order from the sales order
-        order_data = models.execute_kw(db, uid, password, 'sale.order', 'read', [order_id, ['date_order']])
+        # Retrieve the date_order and partner_id from the sales order
+        order_data = models.execute_kw(db, uid, password, 'sale.order', 'read', [order_id, ['date_order', 'partner_id']])
+        if not order_data or 'date_order' not in order_data[0] or 'partner_id' not in order_data[0]:
+            print(f"Missing data for sales order {order_id}. Skipping.")
+            continue
         date_order = datetime.strptime(order_data[0]['date_order'], '%Y-%m-%d %H:%M:%S')
         
         # Generate a random date within 30 days after the date_order
@@ -30,7 +33,7 @@ def create_invoices_from_sales_orders():
         # Prepare invoice data
         invoice_vals = {
             'move_type': 'out_invoice',  # 'out_invoice' for customer invoices
-            'partner_id': order_data[0]['partner_id'][0],  # Assuming partner_id is stored as [id, name]
+            'partner_id': order_data[0]['partner_id'][0],  # Assuming partner_id is stored correctly
             'invoice_date': invoice_date_str,
             'date': invoice_date_str,
             'invoice_line_ids': [(0, 0, {
