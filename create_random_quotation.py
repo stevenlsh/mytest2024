@@ -53,5 +53,16 @@ def create_random_quotation():
     print(f'Created quotation with customer ID {customer_id} and 10 product lines.')
     return order_id
 
+def main():
+    while True:
+        try:
+            num_quotations = int(input("How many number of quotations do you want to create? "))
+            break  # Exit loop if input is a valid integer
+        except ValueError:
+            print("Please enter a valid number.")
+
+    for _ in range(num_quotations):
+        create_random_quotation()
+
 # Example usage
-create_random_quotation()
+main()
