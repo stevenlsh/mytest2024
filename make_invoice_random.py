@@ -18,6 +18,9 @@ def create_invoices_from_sales_orders():
     order_ids = models.execute_kw(db, uid, password, 'sale.order', 'search', [[['invoice_status', '=', 'to invoice'], ['state', '=', 'sale']]])
 
     for order_id in order_ids:
+        # Confirm the sales order and assume it sets the confirmation date (date_order)
+        models.execute_kw(db, uid, password, 'sale.order', 'action_confirm', [order_id])
+
         # Retrieve the date_order and partner_id from the sales order
         order_data = models.execute_kw(db, uid, password, 'sale.order', 'read', [order_id, ['date_order', 'partner_id']])
         if not order_data or 'date_order' not in order_data[0] or 'partner_id' not in order_data[0]:
@@ -26,7 +29,7 @@ def create_invoices_from_sales_orders():
         date_order = datetime.strptime(order_data[0]['date_order'], '%Y-%m-%d %H:%M:%S')
         
         # Generate a random date within 30 days after the date_order
-        random_days = random.randint(0, 30)
+        random_days = random.randint(1, 30)
         invoice_date = date_order + timedelta(days=random_days)
         invoice_date_str = invoice_date.strftime('%Y-%m-%d')
 
