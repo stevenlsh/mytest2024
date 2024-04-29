@@ -1,15 +1,11 @@
 import random
-from faker import Faker
 import xmlrpc.client
-
-# Initialize Faker to generate random data
-fake = Faker()
 
 # Configuration for your Odoo server
 url = 'https://my-einvoicing.com'
-db = 'test-invoice'  # Updated with your database name
-username = 'odoo'    # Updated with your username
-password = 'admin'   # Updated with your password
+db = 'test-invoice'
+username = 'odoo'
+password = 'admin'
 
 # XML-RPC Common and Object endpoints
 common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
@@ -17,25 +13,16 @@ uid = common.authenticate(db, username, password, {})
 models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
 
 def create_random_quotation():
-    # Generate random data
-    customer_name = fake.name()
-    product_name = fake.word()
+    # Fetch random customer
+    customer_ids = models.execute_kw(db, uid, password, 'res.partner', 'search', [[]])
+    customer_id = random.choice(customer_ids)
+
+    # Fetch random product
+    product_ids = models.execute_kw(db, uid, password, 'product.product', 'search', [[]])
+    product_id = random.choice(product_ids)
+    product_data = models.execute_kw(db, uid, password, 'product.product', 'read', [product_id, ['list_price']])
+    unit_price = product_data[0]['list_price']
     quantity = random.randint(1, 100)
-    unit_price = random.uniform(10.0, 100.0)
-
-    # Create customer
-    customer_id = models.execute_kw(db, uid, password, 'res.partner', 'create', [{
-        'name': customer_name,
-        'is_company': False,
-        'customer_rank': 1,
-    }])
-
-    # Create product
-    product_id = models.execute_kw(db, uid, password, 'product.product', 'create', [{
-        'name': product_name,
-        'type': 'product',
-        'list_price': unit_price,
-    }])
 
     # Create quotation
     order_id = models.execute_kw(db, uid, password, 'sale.order', 'create', [{
@@ -47,7 +34,7 @@ def create_random_quotation():
         })],
     }])
 
-    print(f'Created quotation for {customer_name} with product {product_name}, quantity {quantity}, unit price {unit_price:.2f}')
+    print(f'Created quotation with customer ID {customer_id}, product ID {product_id}, quantity {quantity}, unit price {unit_price:.2f}')
     return order_id
 
 # Example usage
