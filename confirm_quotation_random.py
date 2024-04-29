@@ -18,8 +18,8 @@ def confirm_quotations():
     quotation_ids = models.execute_kw(db, uid, password, 'sale.order', 'search', [[['state', 'in', ['draft', 'sent']]]])
     
     for order_id in quotation_ids:
-        # Generate a random date within the last 700 days
-        random_days = random.randint(0, 700)
+        # Generate a random date within the last 365 days
+        random_days = random.randint(0, 365)
         confirm_date = datetime.now() - timedelta(days=random_days)
         confirm_date_str = confirm_date.strftime('%Y-%m-%d %H:%M:%S')
 
