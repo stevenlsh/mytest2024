@@ -14,14 +14,13 @@ uid = common.authenticate(db, username, password, {})
 models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
 
 def create_invoices_from_sales_orders():
-    # Fetch sales orders that are confirmed but not yet invoiced
-    order_ids = models.execute_kw(db, uid, password, 'sale.order', 'search', [[['invoice_status', '=', 'to invoice'], ['state', '=', 'sale']]])
+    # Fetch sales orders that are confirmed, not yet invoiced, and in the 'sale' state
+    order_ids = models.execute_kw(db, uid, password, 'sale.order', 'search', [
+        [['invoice_status', '=', 'to invoice'], ['state', '=', 'sale']]
+    ])
 
     for order_id in order_ids:
-        # Confirm the sales order and assume it sets the confirmation date (date_order)
-        models.execute_kw(db, uid, password, 'sale.order', 'action_confirm', [order_id])
-
-        # Retrieve the date_order and partner_id from the sales order
+        # Retrieve the date_order from the sales order
         order_data = models.execute_kw(db, uid, password, 'sale.order', 'read', [order_id, ['date_order', 'partner_id']])
         if not order_data or 'date_order' not in order_data[0] or 'partner_id' not in order_data[0]:
             print(f"Missing data for sales order {order_id}. Skipping.")
@@ -29,7 +28,7 @@ def create_invoices_from_sales_orders():
         date_order = datetime.strptime(order_data[0]['date_order'], '%Y-%m-%d %H:%M:%S')
         
         # Generate a random date within 30 days after the date_order
-        random_days = random.randint(1, 30)
+        random_days = random.randint(0, 30)
         invoice_date = date_order + timedelta(days=random_days)
         invoice_date_str = invoice_date.strftime('%Y-%m-%d')
 
@@ -50,10 +49,7 @@ def create_invoices_from_sales_orders():
         # Create the invoice
         invoice_id = models.execute_kw(db, uid, password, 'account.move', 'create', [invoice_vals])
 
-        # Confirm the invoice (post it)
-        models.execute_kw(db, uid, password, 'account.move', 'action_post', [invoice_id])
-        
-        print(f'Created and confirmed invoice {invoice_id} for sales order {order_id} with invoice date {invoice_date_str}')
+        print(f'Created invoice {invoice_id} for sales order {order_id} with invoice date {invoice_date_str}')
 
 # Execute the function
 create_invoices_from_sales_orders()
