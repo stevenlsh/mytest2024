@@ -27,13 +27,24 @@ def create_invoices_from_sales_orders():
         invoice_date = date_order + timedelta(days=random_days)
         invoice_date_str = invoice_date.strftime('%Y-%m-%d')
 
-        # Create an invoice for the full amount of the order
-        invoice_id = models.execute_kw(db, uid, password, 'sale.order', 'action_invoice_create', [order_id], {'context': {'create_invoice': True}})
+        # Prepare invoice data
+        invoice_vals = {
+            'move_type': 'out_invoice',  # 'out_invoice' for customer invoices
+            'partner_id': order_data[0]['partner_id'][0],  # Assuming partner_id is stored as [id, name]
+            'invoice_date': invoice_date_str,
+            'date': invoice_date_str,
+            'invoice_line_ids': [(0, 0, {
+                'name': 'Product line',
+                'quantity': 1,
+                'price_unit': 100,  # Placeholder for your product price
+                # Add more details depending on your product setup
+            })],
+        }
         
-        # Set the invoice date
-        models.execute_kw(db, uid, password, 'account.move', 'write', [invoice_id, {'invoice_date': invoice_date_str, 'date': invoice_date_str}])
+        # Create the invoice
+        invoice_id = models.execute_kw(db, uid, password, 'account.move', 'create', [invoice_vals])
 
-        # Optional: Confirm the invoice if required
+        # Confirm the invoice (post it)
         models.execute_kw(db, uid, password, 'account.move', 'action_post', [invoice_id])
         
         print(f'Created and confirmed invoice {invoice_id} for sales order {order_id} with invoice date {invoice_date_str}')
